@@ -11,10 +11,15 @@ arena = Room("Arena", "The final showdown spot!")
 
 # --- Links ---
 town.link_room(forest, "north")
+forest.link_room(town, "south")
 forest.link_room(cave, "east")
-cave.link_room(village, "south")
+cave.link_room(forest, "west")
+cave.link_room(village, "north")
+village.linkroom(cave, "south")
 village.link_room(castle, "west")
+castle.linkroom(village, "east")
 castle.link_room(arena, "north")
+arena.link_room(castle, "south")
 
 # --- Characters ---
 shopkeeper = Character("Bob the Shopkeeper", "A friendly merchant.")
