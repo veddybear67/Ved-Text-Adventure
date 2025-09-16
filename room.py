@@ -2,29 +2,26 @@ class Room:
     def __init__(self, name, description):
         self.name = name
         self.description = description
-        self.linked_rooms = {}
+        self.exits = {}
         self.character = None
-        self.shop = {}
+        self.item = None
+        self.locked = False
+        self.puzzle = None
 
-    def link_room(self, room, direction):
-        """Link this room to another in a direction"""
-        self.linked_rooms[direction] = room
+    def set_exit(self, direction, room):
+        self.exits[direction] = room
 
-    def set_character(self, character):
-        self.character = character
+    def get_exit(self, direction):
+        return self.exits.get(direction)
 
-    def set_shop(self, shop_items):
-        self.shop = shop_items
-
-    def get_details(self):
-        print(f"\n-- {self.name} --")
+    def describe(self):
+        print(f"\n--- {self.name} ---")
         print(self.description)
-        for direction in self.linked_rooms:
-            print(f"{direction.title()} -> {self.linked_rooms[direction].name}")
-
-    def move(self, direction):
-        if direction in self.linked_rooms:
-            return self.linked_rooms[direction]
-        else:
-            print("You can’t go that way.")
-            return self
+        if self.character:
+            print(f"You see {self.character.name} here.")
+        if self.item:
+            print(f"You see {self.item} on the ground.")
+        if self.locked:
+            print("The door is locked.")
+        if self.puzzle:
+            print("There’s a puzzle here!")
