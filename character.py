@@ -1,34 +1,22 @@
 class Character:
-    def __init__(self, name, description):
+    def __init__(self, name, dialogue, is_enemy=False, item=None, weakness=None):
         self.name = name
-        self.description = description
-        self.conversation = None
-
-    def set_conversation(self, conversation):
-        self.conversation = conversation
-
-    def describe(self):
-        print(f"{self.name} is here! {self.description}")
-
-    def talk(self):
-        if self.conversation:
-            print(f"[{self.name} says]: {self.conversation}")
-        else:
-            print(f"{self.name} doesn’t want to talk.")
-
-
-class Enemy(Character):
-    def __init__(self, name, description):
-        super().__init__(name, description)
-        self.weakness = None
-
-    def set_weakness(self, weakness):
+        self.dialogue = dialogue
+        self.is_enemy = is_enemy
+        self.item = item
         self.weakness = weakness
 
-    def fight(self, item):
-        if item == self.weakness:
-            print(f"You defeated {self.name} with {item}!")
-            return True
+    def talk(self):
+        print(f"{self.name}: {self.dialogue}")
+
+    def fight(self, weapon):
+        if self.is_enemy:
+            if weapon == self.weakness:
+                print(f"You defeated {self.name} with the {weapon}!")
+                return True
+            else:
+                print(f"{self.name} crushed you. You needed {self.weakness}.")
+                return False
         else:
-            print(f"{self.name} crushed you! Game Over.")
-            return False
+            print(f"{self.name} doesn’t want to fight.")
+            return None
