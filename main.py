@@ -1,140 +1,123 @@
+import random, sys
 from room import Room
-from character import Character
+from character import Character, Enemy
 
+# ---------- Player ----------
+player = {"name": "JC Chopz", "health": 100, "coins": 30, "inventory": []}
 
-entrance = Room("Entrance", "You stand at the gates of the Chopz Arena.")
-shop = Room("Shop", "A dimly lit shop full of strange goods.")
-trap_room = Room("Trap Room", "A spiked floor lies ahead.")
-riddle_room = Room("Riddle Room", "A glowing wall with words carved in it.")
-mini_boss = Room("Mini-Boss Room", "A thug blocks the path.")
-arena = Room("Arena", "The final stage. Mason awaits.")
+# ---------- Rooms ----------
+entrance = Room("Entrance","The city gate.")
+market   = Room("Market","Busy stalls and merchants.")
+bakery   = Room("Bakery","Fresh bread smells amazing.")
+workshop = Room("Workshop","Old machines and tools.")
+alley    = Room("Alley","Dark and suspicious.")
+library  = Room("Library","Dusty books everywhere.")
+maze     = Room("Maze","Twisting confusing walls.")
+mirror   = Room("Mirror Hall","Endless reflections.")
+guardian = Room("Guardian Chamber","A huge iron guardian.")
+arena    = Room("Arena","The final showdown with Mason!")
 
-# NEW Rooms
-maze_room = Room("Maze Room", "You’re lost in twisting corridors.")
-mirror_room = Room("Mirror Room", "Dozens of reflections confuse you.")
-guardian_room = Room("Guardian Room", "A giant guardian blocks the way.")
+# Links
+entrance.set_exit("north", market)
+market.set_exit("south", entrance); market.set_exit("east", bakery); market.set_exit("west", workshop); market.set_exit("north", alley)
+bakery.set_exit("west", market); workshop.set_exit("east", market)
+alley.set_exit("south", market); alley.set_exit("north", library)
+library.set_exit("south", alley); library.set_exit("north", maze)
+maze.set_exit("south", library); maze.set_exit("east", mirror)
+mirror.set_exit("west", maze); mirror.set_exit("north", guardian)
+guardian.set_exit("south", mirror); guardian.set_exit("north", arena)
+arena.set_exit("south", guardian)
 
+# Shops
+market.set_shop({"Apple":3,"Bread":5})
+bakery.set_shop({"Cake":8})
+workshop.set_shop({"Clippers":25})
+library.set_shop({"Old Map":10})
 
-entrance.set_exit("north", shop)
-shop.set_exit("east", trap_room)
-trap_room.set_exit("north", riddle_room)
-riddle_room.set_exit("east", mini_boss)
-mini_boss.set_exit("north", maze_room)
-maze_room.set_exit("west", mirror_room)
-mirror_room.set_exit("north", guardian_room)
-guardian_room.set_exit("east", arena)
+# Characters
+market.set_character(Character("Rico","A hustler.","Cheap trinkets!"))
+bakery.set_character(Character("Lani","Friendly baker.","Cake for strength."))
+workshop.set_character(Character("Tinker","Old mechanic.","Maybe Clippers?"))
+library.set_character(Character("Elira","Wise librarian.","Solve my riddle."))
+guardian.set_character(Enemy("Guardian","Iron protector.","None shall pass!","Guardian Key",150,20))
+arena.set_character(Enemy("Mason","Final boss with a bat.","You’re done!","Clippers",200,25))
 
+# Puzzles
+market.set_puzzle("guess")    # easy
+library.set_puzzle("riddle")  # medium
+maze.set_puzzle("maze")       # harder
+mirror.set_puzzle("mirror")   # hardest
+guardian.set_puzzle("guardian")
 
-merchant = Character("Merchant", "Buy clippers to stand a chance!", False, "clippers")
-thug = Character("Thug", "You ain’t passing without a fight!", True, weakness="clippers")
-mason = Character("Mason", "JC Chopz, your time is up!", True, weakness="clippers")
-guardian = Character("Guardian", "None shall pass unless you prove your strength!", True, weakness="food")
+# ---------- Helpers ----------
+def show_status(room):
+    print(f"\n-- {room.name} --\n{room.description}")
+    print(f"HP:{player['health']} | Coins:{player['coins']} | Items:{player['inventory']}")
 
-shop.character = merchant
-mini_boss.character = thug
-arena.character = mason
-guardian_room.character = guardian
+def shop(room):
+    if not room.shop: print("No shop here."); return
+    for item,price in room.shop.items(): print(f"{item} ({price}c)")
+    choice=input("Buy what? ").title()
+    if choice in room.shop and player["coins"]>=room.shop[choice]:
+        player["coins"]-=room.shop[choice]; player["inventory"].append(choice)
+        print(f"You bought {choice}")
+    else: print("Can't buy.")
 
-# --- Items ---
-shop.item = "food"
+def puzzle(room):
+    if room.puzzle=="guess":
+        if int(input("Guess 1-5: "))==random.randint(1,5): player["coins"]+=5; print("Win 5c")
+        else: print("Wrong!")
+    elif room.puzzle=="riddle":
+        ans=input("I speak w/o mouth, echo back. What am I? ").lower()
+        if "echo" in ans: print("Correct! Take this Old Map."); player["inventory"].append("Old Map")
+        else: player["health"]-=10; print("Wrong -10HP")
+    elif room.puzzle=="maze":
+        path=["left","right","left"]
+        for step in path:
+            if input("Go left or right? ").lower()!=step: player["health"]-=15; print("Wrong turn -15HP"); return
+        print("Maze cleared!")
+    elif room.puzzle=="mirror":
+        if input("Pick real mirror A/B/C/D: ").upper()=="C": print("Correct +15c"); player["coins"]+=15
+        else: player["health"]-=20; print("Wrong mirror -20HP")
+    elif room.puzzle=="guardian":
+        if "Clippers" in player["inventory"]: print("You cut Guardian’s wires. He drops Guardian Key."); player["inventory"].append("Guardian Key")
+        else: player["health"]-=25; print("Guardian smashes you -25HP")
+    room.puzzle=None
 
-
-trap_room.puzzle = "escape"
-riddle_room.puzzle = "riddle"
-maze_room.puzzle = "maze"
-mirror_room.puzzle = "mirror"
-guardian_room.puzzle = "guardian"
-
-
-current_room = entrance
-inventory = []
-energy = 100
-
-
-def solve_puzzle(room):
-    global energy
-
-    if room.puzzle == "escape":
-        print("You must cross the spiked floor. Do you jump (j) or walk (w)?")
-        move = input("> ").lower()
-        if move == "j":
-            print("You leapt safely across!")
+def fight(enemy):
+    while player["health"]>0 and enemy.health>0:
+        if "Clippers" in player["inventory"]:
+            print("Critical strike with Clippers!"); enemy.health=0
         else:
-            print("You got hurt! -30 energy.")
-            energy -= 30
+            enemy.health-=20; player["health"]-=enemy.damage
+            print(f"EnemyHP:{enemy.health}, YourHP:{player['health']}")
+    if enemy.health<=0: print(f"You beat {enemy.name}!")
+    else: print("You lost..."); sys.exit()
 
-    elif room.puzzle == "riddle":
-        print("Riddle: What has keys but can’t open locks?")
-        answer = input("> ").lower()
-        if "piano" in answer:
-            print("Correct! The path glows open.")
-        else:
-            print("Wrong! You lose -20 energy.")
-            energy -= 20
-
-    elif room.puzzle == "maze":
-        print("You’re in a maze! Choose left (l) or right (r).")
-        choice = input("> ").lower()
-        if choice == "l":
-            print("You found the way out!")
-        else:
-            print("Dead end! -15 energy.")
-            energy -= 15
-
-    elif room.puzzle == "mirror":
-        print("The mirrors whisper: 'Find the truth.' Break (b) or ignore (i)?")
-        action = input("> ").lower()
-        if action == "b":
-            print("You smash the right mirror and a passage opens.")
-        else:
-            print("The illusions drain your mind! -25 energy.")
-            energy -= 25
-
-    elif room.puzzle == "guardian":
-        print("The Guardian demands you show strength. Do you feed it food (f) or fight (fight)?")
-        action = input("> ").lower()
-        if action == "f" and "food" in inventory:
-            print("The Guardian eats and lets you pass.")
-        elif action == "fight":
-            weapon = "clippers" if "clippers" in inventory else None
-            result = guardian.fight(weapon)
-            if not result:
-                print("Game Over!")
-                exit()
-        else:
-            print("You failed the trial! -40 energy.")
-            energy -= 40
-
-
+# ---------- Game Loop ----------
+current=entrance
+print("Welcome to JC Chopz Adventure!")
 
 while True:
-    current_room.describe()
-    print(f"Energy: {energy}, Inventory: {inventory}")
+    if player["health"]<=0: print("You collapse. Game over."); break
+    show_status(current)
 
-    if current_room.character:
-        current_room.character.talk()
-        if current_room.character.item:
-            choice = input("Buy item? (y/n) ").lower()
-            if choice == "y":
-                inventory.append(current_room.character.item)
-                print(f"You got {current_room.character.item}!")
+    if current.character: current.character.talk()
+    if current.item: 
+        if input("Pick up item? (y/n) ").lower()=="y": player["inventory"].append(current.item); current.item=None
+    if current.puzzle: puzzle(current)
+    if current is arena: fight(current.character); print("JC Chopz wins against Mason!"); break
 
-    if current_room == arena:
-        weapon = "clippers" if "clippers" in inventory else None
-        mason.fight(weapon)
-        print("Thanks for playing!")
-        break
+    print("\nCommands: north/south/east/west | shop | inv | quit")
+    cmd=input("> ").lower()
 
-    if current_room.puzzle:
-        solve_puzzle(current_room)
+    if cmd=="quit": break
+    elif cmd=="shop": shop(current)
+    elif cmd=="inv": print(player["inventory"])
+    elif cmd in ["north","south","east","west"]:
+        next_r=current.get_exit(cmd)
+        if next_r: current=next_r
+        else: print("Can't go that way.")
+    else: print("Not a command.")
 
-    command = input("Move (north/south/east/west) or quit: ").lower()
-    if command == "quit":
-        print("Thanks for playing!")
-        break
-    else:
-        next_room = current_room.get_exit(command)
-        if next_room:
-            current_room = next_room
-        else:
-            print("You can’t go that way.")
+
