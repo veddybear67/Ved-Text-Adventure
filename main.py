@@ -2,10 +2,10 @@ import random, sys
 from room import Room
 from character import Character, Enemy
 
-# ---------- Player ----------
+
 player = {"name": "JC Chopz", "health": 100, "coins": 30, "inventory": []}
 
-# ---------- Rooms ----------
+
 entrance = Room("Entrance","The city gate.")
 market   = Room("Market","Busy stalls and merchants.")
 bakery   = Room("Bakery","Fresh bread smells amazing.")
@@ -17,7 +17,6 @@ mirror   = Room("Mirror Hall","Endless reflections.")
 guardian = Room("Guardian Chamber","A huge iron guardian.")
 arena    = Room("Arena","The final showdown with Mason!")
 
-# Links
 entrance.set_exit("north", market)
 market.set_exit("south", entrance); market.set_exit("east", bakery); market.set_exit("west", workshop); market.set_exit("north", alley)
 bakery.set_exit("west", market); workshop.set_exit("east", market)
@@ -28,7 +27,7 @@ mirror.set_exit("west", maze); mirror.set_exit("north", guardian)
 guardian.set_exit("south", mirror); guardian.set_exit("north", arena)
 arena.set_exit("south", guardian)
 
-# Shops
+#
 market.set_shop({"Apple":3,"Bread":5})
 bakery.set_shop({"Cake":8})
 workshop.set_shop({"Clippers":25})
@@ -49,7 +48,7 @@ maze.set_puzzle("maze")       # harder
 mirror.set_puzzle("mirror")   # hardest
 guardian.set_puzzle("guardian")
 
-# ---------- Helpers ----------
+
 def show_status(room):
     print(f"\n-- {room.name} --\n{room.description}")
     print(f"HP:{player['health']} | Coins:{player['coins']} | Items:{player['inventory']}")
